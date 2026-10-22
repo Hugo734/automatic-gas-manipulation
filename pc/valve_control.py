@@ -15,8 +15,8 @@ plc/README.md:
     %MW14 deviation     %MW10 - %MW12 (read only)
 
 Usage:
-    python valve_control.py --ip 192.168.1.50 interactive
-    python valve_control.py --ip 192.168.1.50 sweep --timeout 60
+    python valve_control.py --ip 192.168.1.210 interactive
+    python valve_control.py --ip 192.168.1.210 sweep --timeout 60
 """
 
 import argparse
