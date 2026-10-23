@@ -23,7 +23,7 @@
 ### Controlador TM221ME16R – ETH1
 | Parámetro | Valor |
 |---|---|
-| Dirección IP | Fija, `192.168.1.210` / `255.255.255.0`, gateway `192.168.1.101` |
+| Dirección IP | Fija, `192.168.1.22` / `255.255.255.0`, gateway `192.168.1.101` |
 | Servidor Modbus | **Habilitado**, puerto 502 |
 
 ### Entrada analógica integrada %IW0.0 (feedback de posición)

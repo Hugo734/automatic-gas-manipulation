@@ -15,7 +15,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %S13</InstructionLine>
+                <InstructionLine>LD  %S13</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -36,11 +36,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW1 &lt;&gt; %MW3 ]</InstructionLine>
+                <InstructionLine>LD [ %MW1 &lt;&gt; %MW3 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M0</InstructionLine>
+                <InstructionLine>ST  %M0</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -53,7 +53,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %M0</InstructionLine>
+                <InstructionLine>LD  %M0</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -70,11 +70,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>BLK   %TM0</InstructionLine>
+                <InstructionLine>BLK  %TM0</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M0</InstructionLine>
+                <InstructionLine>LDN  %M0</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -90,7 +90,7 @@
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M1</InstructionLine>
+                <InstructionLine>ST  %M1</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -107,15 +107,15 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %M1</InstructionLine>
+                <InstructionLine>LD  %M1</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>OR    [ %MW2 &lt;&gt; 1 ]</InstructionLine>
+                <InstructionLine>OR [ %MW2 &lt;&gt; 1 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M2</InstructionLine>
+                <InstructionLine>ST  %M2</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -128,7 +128,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M2</InstructionLine>
+                <InstructionLine>LDN  %M2</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -145,7 +145,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %M2</InstructionLine>
+                <InstructionLine>LD  %M2</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -162,7 +162,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW10 &gt; 10000 ]</InstructionLine>
+                <InstructionLine>LD [ %MW10 &gt; 10000 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -179,7 +179,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW10 &lt; 0 ]</InstructionLine>
+                <InstructionLine>LD [ %MW10 &lt; 0 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -196,7 +196,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M100</InstructionLine>
+                <InstructionLine>LDN  %M100</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -213,7 +213,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M100</InstructionLine>
+                <InstructionLine>LDN  %M100</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -230,7 +230,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M100</InstructionLine>
+                <InstructionLine>LDN  %M100</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -255,7 +255,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW12 &lt; 0 ]</InstructionLine>
+                <InstructionLine>LD [ %MW12 &lt; 0 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -272,7 +272,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW12 &gt; 10000 ]</InstructionLine>
+                <InstructionLine>LD [ %MW12 &gt; 10000 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -289,7 +289,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M100</InstructionLine>
+                <InstructionLine>LDN  %M100</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -306,15 +306,15 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW14 &gt; 200 ]</InstructionLine>
+                <InstructionLine>LD [ %MW14 &gt; 200 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>OR    [ %MW14 &lt; -200 ]</InstructionLine>
+                <InstructionLine>OR [ %MW14 &lt; -200 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M3</InstructionLine>
+                <InstructionLine>ST  %M3</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -327,11 +327,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>BLK   %TM1</InstructionLine>
+                <InstructionLine>BLK  %TM1</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>LD    %M3</InstructionLine>
+                <InstructionLine>LD  %M3</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -351,7 +351,7 @@
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M4</InstructionLine>
+                <InstructionLine>ST  %M4</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -368,7 +368,7 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LDN   %M3</InstructionLine>
+                <InstructionLine>LDN  %M3</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -376,7 +376,7 @@
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M5</InstructionLine>
+                <InstructionLine>ST  %M5</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -389,11 +389,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>BLK   %TM2</InstructionLine>
+                <InstructionLine>BLK  %TM2</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>LD    [ %MW11 &lt; 180 ]</InstructionLine>
+                <InstructionLine>LD [ %MW11 &lt; 180 ]</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -409,7 +409,7 @@
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %M6</InstructionLine>
+                <InstructionLine>ST  %M6</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
@@ -426,28 +426,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %M1</InstructionLine>
+                <InstructionLine>LD  %M1</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %MW13:X0</InstructionLine>
-                <Comment />
-              </InstructionLineEntity>
-            </InstructionLines>
-            <Name />
-            <MainComment />
-            <Label />
-            <IsLadderSelected>false</IsLadderSelected>
-          </RungEntity>
-          <RungEntity>
-            <LadderElements />
-            <InstructionLines>
-              <InstructionLineEntity>
-                <InstructionLine>LD    %M4</InstructionLine>
-                <Comment />
-              </InstructionLineEntity>
-              <InstructionLineEntity>
-                <InstructionLine>ST    %MW13:X1</InstructionLine>
+                <InstructionLine>ST  %MW13:X0</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -460,28 +443,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %M6</InstructionLine>
+                <InstructionLine>LD  %M4</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %MW13:X2</InstructionLine>
-                <Comment />
-              </InstructionLineEntity>
-            </InstructionLines>
-            <Name />
-            <MainComment />
-            <Label />
-            <IsLadderSelected>false</IsLadderSelected>
-          </RungEntity>
-          <RungEntity>
-            <LadderElements />
-            <InstructionLines>
-              <InstructionLineEntity>
-                <InstructionLine>LD    %M5</InstructionLine>
-                <Comment />
-              </InstructionLineEntity>
-              <InstructionLineEntity>
-                <InstructionLine>ST    %MW13:X3</InstructionLine>
+                <InstructionLine>ST  %MW13:X1</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -494,11 +460,11 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %I0.0</InstructionLine>
+                <InstructionLine>LD  %M6</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %MW13:X4</InstructionLine>
+                <InstructionLine>ST  %MW13:X2</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -511,11 +477,45 @@
             <LadderElements />
             <InstructionLines>
               <InstructionLineEntity>
-                <InstructionLine>LD    %I0.1</InstructionLine>
+                <InstructionLine>LD  %M5</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
               <InstructionLineEntity>
-                <InstructionLine>ST    %MW13:X5</InstructionLine>
+                <InstructionLine>ST  %MW13:X3</InstructionLine>
+                <Comment />
+              </InstructionLineEntity>
+            </InstructionLines>
+            <Name />
+            <MainComment />
+            <Label />
+            <IsLadderSelected>false</IsLadderSelected>
+          </RungEntity>
+          <RungEntity>
+            <LadderElements />
+            <InstructionLines>
+              <InstructionLineEntity>
+                <InstructionLine>LD  %I0.0</InstructionLine>
+                <Comment />
+              </InstructionLineEntity>
+              <InstructionLineEntity>
+                <InstructionLine>ST  %MW13:X4</InstructionLine>
+                <Comment />
+              </InstructionLineEntity>
+            </InstructionLines>
+            <Name />
+            <MainComment />
+            <Label />
+            <IsLadderSelected>false</IsLadderSelected>
+          </RungEntity>
+          <RungEntity>
+            <LadderElements />
+            <InstructionLines>
+              <InstructionLineEntity>
+                <InstructionLine>LD  %I0.1</InstructionLine>
+                <Comment />
+              </InstructionLineEntity>
+              <InstructionLineEntity>
+                <InstructionLine>ST  %MW13:X5</InstructionLine>
                 <Comment />
               </InstructionLineEntity>
             </InstructionLines>
@@ -1902,6 +1902,8 @@
       <AutoSaveRamOnEeprom>true</AutoSaveRamOnEeprom>
       <WatchdogPeriod>250</WatchdogPeriod>
     </CpuBehavior>
+    <InstListBufferSize>19820</InstListBufferSize>
+    <ProgramBufferSize>158616</ProgramBufferSize>
     <TraceTimeBase>Time5Sec</TraceTimeBase>
     <UserFunctionPous />
     <UserFunctionBlockPous />
@@ -2339,7 +2341,7 @@
         <EthernetConfiguration>
           <NetworkName>M221</NetworkName>
           <IpAllocationMode>FixedAddress</IpAllocationMode>
-          <IpAddress>192.168.1.210</IpAddress>
+          <IpAddress>192.168.1.22</IpAddress>
           <SubnetMask>255.255.255.0</SubnetMask>
           <GatewayAddress>192.168.1.101</GatewayAddress>
           <TransfertRate>TransfertRateAuto</TransfertRate>

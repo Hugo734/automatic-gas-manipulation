@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de válvula de gas</title>
+<style>
+  :root {
+    --ground: #E6E9ED;
+    --card: #FFFFFF;
+    --ink: #1D232B;
+    --muted: #555F6B;
+    --line: #C9D0D8;
+    --header: #1D232B;
+    --header-ink: #F3F5F7;
+    --header-chip: #2B333D;
+    --valve: #1F5FBF;
+    --pos: #8A96A3;
+    --alarm-bg: #FFF1E6;
+    --alarm-ink: #7C2D12;
+    --danger: #C2410C;
+    --ok: #2F7D4F;
+    --ok-bg: #E7F4EC;
+    --off-bg: #EEF0F3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .mono { font-family: Consolas, "Cascadia Mono", monospace; }
+  header {
+    background: var(--header); color: var(--header-ink); border-radius: 10px; padding: 14px 18px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  }
+  header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  header .sub { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #B8C1CC; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: var(--header-chip); border-radius: 8px; padding: 8px 12px; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #8A96A3; display: inline-block; flex: none; }
+  .dot.on { background: #4CC38A; }
+  .dot.bad { background: #F07B4A; }
+  .dot.wait { background: #E2B33C; animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .dot.wait { animation: none; } }
+  .banner { border-radius: 10px; padding: 12px 16px; font-size: 15px; background: var(--alarm-bg); color: var(--alarm-ink); }
+  .banner.info { background: #FFF8E1; color: #5C4300; }
+  .card { background: var(--card); border-radius: 12px; padding: 16px 18px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .kpi .label { font-size: 13px; color: var(--muted); }
+  .kpi .value { font-size: 34px; font-weight: 600; line-height: 1.2; }
+  .kpi .note { font-size: 13px; color: var(--muted); }
+  .main { display: flex; flex-wrap: wrap; gap: 16px; }
+  .chart-card { flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .side { flex: 1 1 340px; display: flex; flex-direction: column; gap: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  h2 { margin: 0; font-size: 17px; font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 18px; height: 3px; display: inline-block; border-radius: 2px; }
+  canvas { width: 100%; height: 380px; display: block; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button {
+    font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 8px 14px;
+    border-radius: 8px; border: 1px solid #A9B3BE; background: #FFFFFF; color: var(--ink); cursor: pointer;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.logout { min-height: 32px; padding: 4px 10px; font-size: 13px; background: transparent; color: var(--header-ink); border-color: #5A6573; }
+  button.primary { background: var(--valve); color: #FFFFFF; border-color: var(--valve); }
+  button.danger { background: var(--danger); color: #FFFFFF; border-color: var(--danger); font-size: 17px; min-height: 56px; }
+  button[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--valve); outline-offset: 2px; }
+  .presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .presets button { padding: 8px 4px; }
+  input[type=number], input[type=password] { font: inherit; font-size: 18px; width: 120px; min-height: 44px; padding: 6px 10px; border: 1px solid #A9B3BE; border-radius: 8px; }
+  input[type=range] { width: 100%; accent-color: var(--valve); height: 28px; }
+  label { font-size: 13px; font-weight: 600; }
+  .bar { position: relative; height: 16px; background: var(--ground); border-radius: 8px; overflow: hidden; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; background: #3A4654; border-radius: 8px; }
+  .bar .mark { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--valve); }
+  .lamps { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .lamp { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--off-bg); font-size: 14px; }
+  .lamp.ok { background: var(--ok-bg); }
+  .lamp.ok .dot { background: var(--ok); }
+  .lamp.bad { background: var(--alarm-bg); color: var(--alarm-ink); font-weight: 600; }
+  .lamp.bad .dot { background: var(--danger); }
+  .alarm { display: flex; gap: 10px; align-items: center; background: var(--alarm-bg); color: var(--alarm-ink); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .msg { font-size: 14px; min-height: 20px; }
+  .msg.err { color: var(--alarm-ink); font-weight: 600; }
+  .msg.ok { color: var(--ok); }
+  .log { list-style: none; margin: 0; padding: 0; font-size: 14px; max-height: 260px; overflow-y: auto; }
+  .log li { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E6E9ED; }
+  .log li.alarm-line { color: var(--alarm-ink); font-weight: 600; }
+  .hidden { display: none !important; }
+  footer { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="sub">Manipulación automática de gas · Máquina 1</div>
+      <h1>Válvula de gas V-101</h1>
+    </div>
+    <div class="chips">
+      <div class="chip"><span class="dot" id="connDot" aria-hidden="true"></span><span id="connText">Conectando…</span></div>
+      <div class="chip" id="ctrlChip">Control: --</div>
+      <div class="chip mono" id="clock">--:--:--</div>
+      <form class="chip" method="post" action="/logout" style="padding: 4px 4px 4px 12px">
+        <span id="userText">--</span>
+        <button type="submit" class="logout">Salir</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="banner hidden" id="banner" role="alert"></div>
+
+  <section class="kpis" aria-label="Valores actuales">
+    <div class="card kpi">
+      <div class="label">Consigna pedida (%MW0)</div>
+      <div class="value mono" id="kpiSp">-- %</div>
+      <div class="note mono" id="kpiSpMa">-- mA</div>
+    </div>
+    <div class="card kpi">
+      <div class="label">Salida al actuador (%QW1.0)</div>
+      <div class="value mono" id="kpiOut" style="color: var(--valve)">-- %</div>
+      <div class="note mono" id="kpiOutMa">-- mA</div>
+    </div>
+    <div class="card kpi">
+      <div class="label">Posición real de la válvula</div>
+      <div class="value mono" id="kpiPos">-- %</div>
+      <div class="bar" role="img" id="posBar" aria-label="Posición de la válvula">
+        <div class="fill" id="posFill" style="width: 0"></div>
+        <div class="mark" id="posMark" style="left: 0"></div>
+      </div>
+    </div>
+    <div class="card kpi">
+      <div class="label">Desviación (salida – posición)</div>
+      <div class="value mono" id="kpiDev">-- %</div>
+      <div class="note mono" id="kpiFb">feedback -- mA</div>
+    </div>
+  </section>
+
+  <div class="main">
+    <section class="card chart-card" aria-label="Tendencia">
+      <div class="row" style="justify-content: space-between">
+        <h2>Tendencia – últimos 10 minutos</h2>
+        <div class="legend">
+          <span><i class="sw" style="background: var(--valve)"></i>Salida al actuador</span>
+          <span><i class="sw" style="background: var(--pos)"></i>Posición real</span>
+        </div>
+      </div>
+      <canvas id="chart" role="img" aria-label="Gráfica de la salida a la válvula y su posición real en el tiempo"></canvas>
+    </section>
+
+    <div class="side">
+      <section class="card stack" aria-label="Control">
+        <h2>Control</h2>
+
+        <div class="muted hidden" id="readOnly">Tu usuario es de solo lectura: puedes ver la válvula pero no operarla.</div>
+
+        <div class="stack" id="ctrlBox">
+        <div class="row">
+          <button type="button" class="primary" id="btnEnable">Tomar control</button>
+          <button type="button" id="btnDisable">Liberar (cerrar)</button>
+        </div>
+
+        <div class="stack" style="gap: 6px">
+          <div class="row" style="justify-content: space-between">
+            <label for="spRange">Nueva apertura</label>
+            <div class="row" role="group" aria-label="Unidades">
+              <button type="button" id="unitPct" aria-pressed="true">%</button>
+              <button type="button" id="unitMa" aria-pressed="false">mA</button>
+            </div>
+          </div>
+          <input type="range" id="spRange" min="0" max="100" step="1" value="0" aria-label="Nueva apertura en por ciento">
+          <div class="presets" role="group" aria-label="Valores rápidos">
+            <button type="button" data-pct="0">0 %</button>
+            <button type="button" data-pct="25">25 %</button>
+            <button type="button" data-pct="50">50 %</button>
+            <button type="button" data-pct="75">75 %</button>
+            <button type="button" data-pct="100">100 %</button>
+          </div>
+          <div class="row">
+            <input type="number" id="spInput" min="0" max="100" step="0.5" value="0" aria-label="Valor">
+            <span class="mono" id="spOther">= 4.00 mA</span>
+            <button type="button" class="primary" id="btnSend">Enviar</button>
+          </div>
+          <div class="msg" id="msg" aria-live="polite"></div>
+        </div>
+
+        <button type="button" class="danger" id="btnClose">CERRAR VÁLVULA (4 mA)</button>
+        </div>
+      </section>
+
+      <section class="card stack" aria-label="Estado del PLC" style="gap: 8px">
+        <h2>Estado</h2>
+        <div class="lamps">
+          <div class="lamp" id="lHb"><span class="dot"></span>Heartbeat</div>
+          <div class="lamp" id="lInPos"><span class="dot"></span>En posición</div>
+          <div class="lamp" id="lFcC"><span class="dot"></span>FC cerrada</div>
+          <div class="lamp" id="lFcO"><span class="dot"></span>FC abierta</div>
+          <div class="lamp" id="lWd"><span class="dot"></span>Watchdog</div>
+          <div class="lamp" id="lPosErr"><span class="dot"></span>Error posición</div>
+          <div class="lamp" id="lFbErr"><span class="dot"></span>Falla feedback</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card stack" aria-label="Eventos" style="gap: 8px">
+    <h2>Eventos</h2>
+    <ul class="log" id="log"><li class="muted">Sin eventos.</li></ul>
+  </section>
+
+  <footer>La seguridad está en el PLC: si este programa o la red fallan, el watchdog cierra la válvula en 2 s. Esta válvula no sustituye a las válvulas de corte del quemador.</footer>
+</div>
+
+<script>
+(function () {
+  const HISTORY_S = 600;
+  const POLL_MS = 1000;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (v, d) => Number(v).toFixed(d);
+  const pctToMa = (p) => 4 + p * 0.16;
+  const maToPct = (ma) => (ma - 4) / 0.16;
+
+  let last = null;          // last /api/status response
+  let hist = [];            // [t, out_pct, pos_pct]
+  let unit = 'pct';
+  let pending = 0;          // value (in %) the operator is about to send
+
+  function say(text, kind) {
+    $('msg').textContent = text;
+    $('msg').className = 'msg ' + (kind || '');
+  }
+
+  async function post(path, body) {
+    try {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {})
+      });
+      if (r.status === 401) { location.href = '/login'; return false; }
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { say(data.error || ('Error ' + r.status), 'err'); return false; }
+      poll();
+      return true;
+    } catch (e) {
+      say('No se pudo comunicar con el servidor.', 'err');
+      return false;
+    }
+  }
+
+  // ---- pending value: slider, presets, number box ----
+  function setPending(pct, from) {
+    pending = Math.max(0, Math.min(100, Math.round(pct * 2) / 2));
+    if (from !== 'range') $('spRange').value = pending;
+    if (from !== 'input') $('spInput').value = unit === 'pct' ? fmt(pending, 1) : fmt(pctToMa(pending), 2);
+    $('spOther').textContent = unit === 'pct' ? '= ' + fmt(pctToMa(pending), 2) + ' mA' : '= ' + fmt(pending, 1) + ' %';
+  }
+
+  function setUnit(u) {
+    unit = u;
+    $('unitPct').setAttribute('aria-pressed', String(u === 'pct'));
+    $('unitMa').setAttribute('aria-pressed', String(u === 'ma'));
+    const box = $('spInput');
+    if (u === 'pct') { box.min = 0; box.max = 100; box.step = 0.5; }
+    else { box.min = 4; box.max = 20; box.step = 0.1; }
+    setPending(pending);
+  }
+
+  $('unitPct').addEventListener('click', () => setUnit('pct'));
+  $('unitMa').addEventListener('click', () => setUnit('ma'));
+  $('spRange').addEventListener('input', (e) => setPending(Number(e.target.value), 'range'));
+  $('spInput').addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    if (e.target.value === '' || isNaN(v)) return;
+    setPending(unit === 'pct' ? v : maToPct(v), 'input');
+  });
+  $('spInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+  document.querySelectorAll('[data-pct]').forEach((b) =>
+    b.addEventListener('click', () => setPending(Number(b.dataset.pct))));
+
+  async function send() {
+    const v = Number($('spInput').value);
+    const ok = unit === 'pct' ? v >= 0 && v <= 100 : v >= 4 && v <= 20;
+    if (!ok) { say(unit === 'pct' ? 'El valor debe estar entre 0 y 100 %.' : 'El valor debe estar entre 4 y 20 mA.', 'err'); return; }
+    const body = unit === 'pct' ? { pct: v } : { ma: v };
+    if (await post('/api/setpoint', body)) {
+      say('Enviado: ' + fmt(pending, 1) + ' % (' + fmt(pctToMa(pending), 2) + ' mA).', 'ok');
+    }
+  }
+
+  $('btnSend').addEventListener('click', send);
+  $('btnClose').addEventListener('click', async () => {
+    if (await post('/api/close')) { setPending(0); say('Orden de cierre enviada.', 'ok'); }
+  });
+  $('btnEnable').addEventListener('click', async () => {
+    if (await post('/api/enable', { on: true })) { setPending(0); say('Control tomado. La válvula arranca cerrada.', 'ok'); }
+  });
+  $('btnDisable').addEventListener('click', async () => {
+    if (await post('/api/enable', { on: false })) { setPending(0); say('Control liberado. La válvula se cierra.', 'ok'); }
+  });
+
+  // ---- status ----
+  function lamp(id, on, kind) {
+    $(id).className = 'lamp' + (on ? (kind === 'bad' ? ' bad' : ' ok') : '');
+  }
+
+  function render() {
+    $('clock').textContent = new Date().toLocaleTimeString('es-MX', { hour12: false });
+    if (!last) return;
+    const s = last.state;
+    const conn = last.connected;
+
+    const waiting = !conn && !last.ever_connected && last.plc !== '--';
+    $('connDot').className = 'dot ' + (conn ? 'on' : waiting ? 'wait' : 'bad');
+    $('connText').textContent = 'PLC ' + last.plc + ' · ' +
+      (conn ? 'conectado' : waiting ? 'esperando conexión…' : 'SIN COMUNICACIÓN');
+    if (last.user) {
+      const operator = last.role === 'operador';
+      $('userText').textContent = last.user + ' · ' + last.role;
+      $('ctrlBox').classList.toggle('hidden', !operator);
+      $('readOnly').classList.toggle('hidden', operator);
+    }
+
+    const banner = [];
+    const tries = last.attempts ? ' Intentos: ' + last.attempts + (last.error ? ' (' + last.error + ').' : '.') : '';
+    if (waiting) {
+      banner.push('El panel está funcionando, pero todavía no hay conexión con el PLC ' + last.plc +
+        '. Sigue intentando solo cada medio segundo. Revisa que el PLC tenga 24 V, esté en RUN y el cable esté en ETH1.' + tries);
+    } else if (!conn) {
+      banner.push('Se perdió la comunicación con el PLC ' + last.plc + '. El watchdog del PLC cierra la válvula en 2 s. Reintentando…' + tries);
+    }
+    if (s && s.alarms.length) banner.push('Alarma: ' + s.alarms.join(', ') + '.');
+    if (s && conn && !s.enabled) banner.push('La PC no tiene el control: la válvula está cerrada. Presiona "Tomar control" para operarla.');
+    $('banner').textContent = banner.join(' ');
+    $('banner').classList.toggle('hidden', banner.length === 0);
+    $('banner').classList.toggle('info', waiting);
+
+    $('ctrlChip').textContent = !s ? 'Control: --' : (s.enabled ? 'Control: PC (habilitado)' : 'Control: PLC (cerrada)');
+
+    const canWrite = conn && s && s.enabled;
+    ['btnSend', 'spRange', 'spInput'].forEach((id) => { $(id).disabled = !canWrite; });
+    document.querySelectorAll('[data-pct]').forEach((b) => { b.disabled = !canWrite; });
+    $('btnEnable').disabled = !conn || (s && s.enabled);
+    $('btnDisable').disabled = !canWrite;
+    $('btnClose').disabled = !conn;
+
+    if (!s) {
+      ['kpiSp', 'kpiOut', 'kpiPos', 'kpiDev'].forEach((id) => { $(id).textContent = '-- %'; });
+      return;
+    }
+    $('kpiSp').textContent = fmt(s.setpoint_pct, 1) + ' %';
+    $('kpiSpMa').textContent = fmt(s.setpoint_ma, 2) + ' mA';
+    $('kpiOut').textContent = fmt(s.output_pct, 1) + ' %';
+    $('kpiOutMa').textContent = fmt(s.output_ma, 2) + ' mA';
+    $('kpiPos').textContent = fmt(s.feedback_pct, 1) + ' %';
+    $('kpiDev').textContent = (s.deviation_pct >= 0 ? '+' : '') + fmt(s.deviation_pct, 1) + ' %';
+    $('kpiFb').textContent = 'feedback ' + fmt(s.feedback_ma, 2) + ' mA (crudo ' + s.feedback_raw + ')';
+    const pos = Math.max(0, Math.min(100, s.feedback_pct)), out = Math.max(0, Math.min(100, s.output_pct));
+    $('posFill').style.width = pos + '%';
+    $('posMark').style.left = 'calc(' + out + '% - 1.5px)';
+    $('posBar').setAttribute('aria-label', 'Posición ' + fmt(pos, 0) + ' %, salida ' + fmt(out, 0) + ' %');
+
+    lamp('lHb', s.heartbeat_ok);
+    lamp('lInPos', s.in_position);
+    lamp('lFcC', s.limit_closed);
+    lamp('lFcO', s.limit_open);
+    lamp('lWd', s.alarms.includes('WATCHDOG'), 'bad');
+    lamp('lPosErr', s.alarms.includes('ERROR DE POSICION'), 'bad');
+    lamp('lFbErr', s.alarms.includes('FALLA SEÑAL FEEDBACK'), 'bad');
+  }
+
+  function renderLog() {
+    const items = last ? last.log : [];
+    if (!items.length) { $('log').innerHTML = '<li class="muted">Sin eventos.</li>'; return; }
+    $('log').replaceChildren(...items.map((it) => {
+      const li = document.createElement('li');
+      if (/ALARMA|Sin comunicación/.test(it.text)) li.className = 'alarm-line';
+      const t = document.createElement('span');
+      t.className = 'mono';
+      t.textContent = new Date(it.t * 1000).toLocaleTimeString('es-MX', { hour12: false });
+      const x = document.createElement('span');
+      x.textContent = it.text;
+      li.append(t, x);
+      return li;
+    }));
+  }
+
+  function drawChart() {
+    const c = $('chart');
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth, h = c.clientHeight;
+    if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+      c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    }
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+
+    const L = 48, R = 16, T = 10, B = 28;
+    const pw = w - L - R, ph = h - T - B;
+    const now = last ? last.time : Date.now() / 1000;
+    const xAt = (t) => L + pw * (1 - (now - t) / HISTORY_S);
+    const yP = (v) => T + ph * (1 - Math.max(-2, Math.min(102, v)) / 100);
+
+    g.font = '12px Consolas, monospace';
+    g.lineWidth = 1;
+    for (let k = 0; k <= 4; k++) {
+      const v = k * 25, y = yP(v);
+      g.strokeStyle = '#E6E9ED';
+      g.beginPath(); g.moveTo(L, y); g.lineTo(L + pw, y); g.stroke();
+      g.fillStyle = '#555F6B';
+      g.textAlign = 'right'; g.fillText(v + '%', L - 6, y + 4);
+    }
+    g.textAlign = 'center';
+    for (let m = 0; m <= 10; m += 2) {
+      g.fillText(m === 10 ? 'ahora' : '-' + (10 - m) + ' min', L + pw * m / 10, h - 8);
+    }
+
+    function line(idx, color, width) {
+      g.strokeStyle = color; g.lineWidth = width;
+      g.beginPath();
+      let started = false;
+      hist.forEach((p) => {
+        if (p[idx] === null || now - p[0] > HISTORY_S) { started = false; return; }
+        const X = xAt(p[0]), Y = yP(p[idx]);
+        if (!started) { g.moveTo(X, Y); started = true; } else g.lineTo(X, Y);
+      });
+      g.stroke();
+    }
+    line(2, '#8A96A3', 2.5);
+    line(1, '#1F5FBF', 2);
+  }
+
+  async function poll() {
+    try {
+      const r = await fetch('/api/status', { cache: 'no-store' });
+      if (r.status === 401) { location.href = '/login'; return; }
+      last = await r.json();
+    } catch (e) {
+      last = { connected: false, plc: '--', error: 'el servidor web no responde', state: null, log: last ? last.log : [], time: Date.now() / 1000,
+               user: last && last.user, role: last && last.role };
+    }
+    const s = last.state;
+    hist.push([last.time, s ? s.output_pct : null, s ? s.feedback_pct : null]);
+    while (hist.length && last.time - hist[0][0] > HISTORY_S) hist.shift();
+    render(); renderLog(); drawChart();
+  }
+
+  async function loadHistory() {
+    try {
+      const r = await fetch('/api/history', { cache: 'no-store' });
+      hist = await r.json();
+    } catch (e) { hist = []; }
+  }
+
+  window.addEventListener('resize', drawChart);
+  setUnit('pct');
+  loadHistory().then(poll);
+  setInterval(poll, POLL_MS);
+  setInterval(render, 1000);
+})();
+</script>
+</body>
+</html>

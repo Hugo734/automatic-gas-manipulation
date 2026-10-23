@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MayaControl</title>
+<style>
+  :root {
+    --ground: #E6E9ED;
+    --card: #FFFFFF;
+    --ink: #1D232B;
+    --muted: #555F6B;
+    --header: #1D232B;
+    --valve: #1F5FBF;
+    --alarm-bg: #FFF1E6;
+    --alarm-ink: #7C2D12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--ground); color: var(--ink); padding: 16px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  .card { background: var(--card); border-radius: 12px; width: 100%; max-width: 380px; overflow: hidden; }
+  .top { background: var(--header); color: #F3F5F7; padding: 16px 20px; }
+  .top .sub { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #B8C1CC; }
+  .top h1 { margin: 2px 0 0; font-size: 20px; font-weight: 600; }
+  form { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  label { font-size: 13px; font-weight: 600; display: flex; flex-direction: column; gap: 6px; }
+  input { font: inherit; font-size: 17px; min-height: 44px; padding: 6px 10px; border: 1px solid #A9B3BE; border-radius: 8px; }
+  button {
+    font: inherit; font-size: 16px; font-weight: 600; min-height: 48px; border-radius: 8px;
+    border: 1px solid var(--valve); background: var(--valve); color: #FFFFFF; cursor: pointer;
+  }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--valve); outline-offset: 2px; }
+  .err { background: var(--alarm-bg); color: var(--alarm-ink); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="sub">Centro de control de produccion</div>
+      <h1>Ingresar</h1>
+    </div>
+    <form method="post" action="/login">
+      <div class="err hidden" id="err" role="alert"></div>
+      <label>Usuario
+        <input name="usuario" autocomplete="username" autocapitalize="none" required autofocus>
+      </label>
+      <label>Contraseña
+        <input name="contrasena" type="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit">Entrar</button>
+      <div class="muted">Si no tienes usuario, pídelo al encargado del sistema.</div>
+    </form>
+  </div>
+<script>
+  const e = new URLSearchParams(location.search).get('error');
+  if (e) {
+    const box = document.getElementById('err');
+    box.textContent = e === 'bloqueado'
+      ? 'Demasiados intentos fallidos. Espera 5 minutos e intenta de nuevo.'
+      : 'Usuario o contraseña incorrectos.';
+    box.classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

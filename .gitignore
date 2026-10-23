@@ -1,0 +1,4 @@
+__pycache__/
+# Accounts and TLS keys of the web panel: never commit
+pc/usuarios.json
+*.pem
