@@ -6,10 +6,11 @@
 <title>MayaControl</title>
 <style>
   :root {
-    --ground: #E6E9ED;
+    --ground: #FFFFFF;
     --card: #FFFFFF;
     --ink: #1D232B;
     --muted: #555F6B;
+    --line: #DDE2E7;
     --header: #1D232B;
     --valve: #1F5FBF;
     --alarm-bg: #FFF1E6;
@@ -17,31 +18,38 @@
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: var(--ground); color: var(--ink); padding: 16px;
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--ground); color: var(--ink); padding: 24px 16px;
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   }
-  .card { background: var(--card); border-radius: 12px; width: 100%; max-width: 380px; overflow: hidden; }
-  .top { background: var(--header); color: #F3F5F7; padding: 16px 20px; }
+  .logo { width: 100%; max-width: 420px; height: auto; display: block; margin-bottom: 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: 100%; max-width: 420px; overflow: hidden;
+    box-shadow: 0 6px 24px rgba(29, 35, 43, .08);
+  }
+  .top { background: var(--header); color: #F3F5F7; padding: 14px 24px; }
   .top .sub { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #B8C1CC; }
   .top h1 { margin: 2px 0 0; font-size: 20px; font-weight: 600; }
-  form { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-  label { font-size: 13px; font-weight: 600; display: flex; flex-direction: column; gap: 6px; }
-  input { font: inherit; font-size: 17px; min-height: 44px; padding: 6px 10px; border: 1px solid #A9B3BE; border-radius: 8px; }
+  form { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  label { font-size: 14px; font-weight: 600; display: flex; flex-direction: column; gap: 8px; }
+  input { font: inherit; font-size: 17px; min-height: 48px; padding: 6px 12px; border: 1px solid #A9B3BE; border-radius: 8px; }
   button {
-    font: inherit; font-size: 16px; font-weight: 600; min-height: 48px; border-radius: 8px;
+    font: inherit; font-size: 16px; font-weight: 600; min-height: 52px; border-radius: 8px; margin-top: 4px;
     border: 1px solid var(--valve); background: var(--valve); color: #FFFFFF; cursor: pointer;
   }
+  button:hover { filter: brightness(1.08); }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--valve); outline-offset: 2px; }
   .err { background: var(--alarm-bg); color: var(--alarm-ink); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
-  .muted { color: var(--muted); font-size: 13px; }
+  .muted { color: var(--muted); font-size: 13px; text-align: center; }
   .hidden { display: none; }
 </style>
 </head>
 <body>
+  <!-- URL served by valve_web.py (from dashboard/imagenes), not a disk path -->
+  <img class="logo" src="/imagenes/Mayalatex_logo.png" alt="Maya Latex Productos" width="681" height="341">
   <div class="card">
     <div class="top">
-      <div class="sub">Centro de control de produccion</div>
+      <div class="sub">Centro de control de producción</div>
       <h1>Ingresar</h1>
     </div>
     <form method="post" action="/login">

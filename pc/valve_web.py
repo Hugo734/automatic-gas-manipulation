@@ -27,6 +27,7 @@ import collections
 import http.cookies
 import json
 import os
+import socket
 import ssl
 import threading
 import time
@@ -40,6 +41,8 @@ from valve_control import (HEARTBEAT_PERIOD_S, REG_ENABLE, REG_HEARTBEAT, REG_SE
 DASHBOARD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dashboard")
 PAGE = os.path.join(DASHBOARD_DIR, "valvula.html")
 LOGIN_PAGE = os.path.join(DASHBOARD_DIR, "login.html")
+IMAGES_DIR = os.path.join(DASHBOARD_DIR, "imagenes")
+IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml"}
 COOKIE = "valve_session"
 HISTORY_POINTS = int(600 / HEARTBEAT_PERIOD_S)  # 10 minutes
 LOG_LINES = 50
@@ -171,6 +174,14 @@ class Controller:
 
 class PanelServer(ThreadingHTTPServer):
     daemon_threads = True
+    # On Windows SO_REUSEADDR lets a second panel bind the same port and steal requests,
+    # with two processes sending heartbeats to the PLC. Claim the port exclusively instead.
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        if os.name == "nt":
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
     def handle_error(self, request, client_address):
         pass  # plain http to an https port, dropped connections: nothing the operator can act on
@@ -186,7 +197,8 @@ def make_handler(ctrl, sessions, secure):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "no-store")
+            if not any(name == "Cache-Control" for name, _ in headers):
+                self.send_header("Cache-Control", "no-store")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("X-Content-Type-Options", "nosniff")
             for name, value in headers:
@@ -197,6 +209,17 @@ def make_handler(ctrl, sessions, secure):
         def _file(self, path):
             with open(path, "rb") as f:
                 self._send(200, f.read(), "text/html; charset=utf-8")
+
+        def _image(self, name):
+            name = urllib.parse.unquote(name)
+            ctype = IMAGE_TYPES.get(os.path.splitext(name)[1].lower())
+            full = os.path.join(IMAGES_DIR, name)
+            # Plain file names only: no sub-folders, no "..", nothing outside dashboard/imagenes
+            if not ctype or name != os.path.basename(name) or not os.path.isfile(full):
+                self._send(404, {"error": "No encontrado"})
+                return
+            with open(full, "rb") as f:
+                self._send(200, f.read(), ctype, [("Cache-Control", "max-age=86400")])
 
         def _redirect(self, location, cookie=None):
             headers = [("Location", location)]
@@ -223,6 +246,9 @@ def make_handler(ctrl, sessions, secure):
             path = self._path()
             if path == "/login":
                 self._file(LOGIN_PAGE)
+                return
+            if path.startswith("/imagenes/"):
+                self._image(path[len("/imagenes/"):])  # public: the login page needs the logo
                 return
             who = self._who()
             if path in ("/", "/index.html"):
@@ -323,7 +349,11 @@ def main():
     sessions = Sessions(store)
 
     ctrl = Controller(args.plc, args.port, args.unit)
-    server = PanelServer((args.bind, args.web_port), make_handler(ctrl, sessions, bool(args.cert)))
+    try:
+        server = PanelServer((args.bind, args.web_port), make_handler(ctrl, sessions, bool(args.cert)))
+    except OSError:
+        raise SystemExit(f"El puerto {args.web_port} ya está en uso: probablemente ya hay otro panel corriendo.\n"
+                         "Ciérralo (Ctrl+C en su ventana) antes de abrir otro. Solo debe haber uno conectado al PLC.")
     scheme = "http"
     if args.cert:
         tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
