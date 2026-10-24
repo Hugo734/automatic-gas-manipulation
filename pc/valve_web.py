@@ -10,7 +10,8 @@ Every page and API call needs a login (accounts: pc/usuarios.py). Only the
     POST /logout
     GET  /                 control page
     GET  /api/status       current state (polled by the page every second)
-    GET  /api/history      last 10 minutes of setpoint / position
+    GET  /api/history      [t, output %, position %, temperature °C] (?min=N, default 10)
+    GET  /api/history.csv  the whole buffer (1 hour) as a CSV download
     POST /api/setpoint     {"pct": 0..100} or {"ma": 4..20}      (operador)
     POST /api/enable       {"on": true | false}                  (operador)
     POST /api/close        setpoint 0 (4 mA)                     (operador)
@@ -44,7 +45,9 @@ LOGIN_PAGE = os.path.join(DASHBOARD_DIR, "login.html")
 IMAGES_DIR = os.path.join(DASHBOARD_DIR, "imagenes")
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml"}
 COOKIE = "valve_session"
-HISTORY_POINTS = int(600 / HEARTBEAT_PERIOD_S)  # 10 minutes
+HISTORY_POINTS = int(3600 / HEARTBEAT_PERIOD_S)  # 1 hour
+REG_TEMPERATURE = 20  # %MW20 temperature in tenths of °C, %MW21 raw %IW0.1 (plc/README.md)
+TEMP_RAW_MIN = 180    # below 3.6 mA (499 ohm): no signal from the TP100 transmitter
 LOG_LINES = 50
 
 
@@ -93,7 +96,7 @@ class Controller:
                 self.add_log(f"No responde el PLC: {exc}")
             self.last_error = str(exc)
             self.plc.close()
-            self.history.append([time.time(), None, None])
+            self.history.append([time.time(), None, None, None])
             return
         with self.lock:
             self.connected = True
@@ -117,20 +120,23 @@ class Controller:
                         self.connected = False
                         self.last_error = str(exc)
                         self.plc.close()
-                        self.history.append([time.time(), None, None])
+                        self.history.append([time.time(), None, None, None])
             self._stop.wait(HEARTBEAT_PERIOD_S)
 
     def _read_state(self):
         setpoint, heartbeat, enable, seen = self.plc.read_holding(REG_SETPOINT, 4)
         s = self.valve.status()
+        temp, temp_raw = self.plc.read_holding(REG_TEMPERATURE, 2)
         s.update({
+            "temperature_c": temp / 10 if temp_raw >= TEMP_RAW_MIN else None,
+            "temperature_raw": temp_raw,
             "setpoint_pct": setpoint / 100,
             "setpoint_ma": counts_to_ma(setpoint),
             "enabled": enable == 1,
             "heartbeat_ok": seen == heartbeat,
         })
         self.state = s
-        self.history.append([time.time(), s["output_pct"], s["feedback_pct"]])
+        self.history.append([time.time(), s["output_pct"], s["feedback_pct"], s["temperature_c"]])
         alarms = set(s["alarms"])
         for a in alarms - self._prev_alarms:
             self.add_log(f"ALARMA: {a}")
@@ -221,6 +227,20 @@ def make_handler(ctrl, sessions, secure):
             with open(full, "rb") as f:
                 self._send(200, f.read(), ctype, [("Cache-Control", "max-age=86400")])
 
+        def _csv(self):
+            with ctrl.lock:
+                rows = list(ctrl.history)
+            fmt = lambda v, d: "" if v is None else f"{v:.{d}f}"
+            lines = ["fecha_hora,orden_valvula_pct,posicion_valvula_pct,temperatura_c"]
+            for t, out, pos, temp in rows:
+                stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t)) + f".{int(t * 10) % 10}"
+                lines.append(f"{stamp},{fmt(out, 2)},{fmt(pos, 2)},{fmt(temp, 1)}")
+            name = time.strftime("MB24_quemadores_%Y%m%d_%H%M.csv")
+            # BOM so Excel opens the accents correctly
+            body = "﻿" + "\r\n".join(lines) + "\r\n"
+            self._send(200, body.encode("utf-8"), "text/csv; charset=utf-8",
+                       [("Content-Disposition", f'attachment; filename="{name}"')])
+
         def _redirect(self, location, cookie=None):
             headers = [("Location", location)]
             if cookie is not None:
@@ -263,8 +283,13 @@ def make_handler(ctrl, sessions, secure):
                 snap["user"], snap["role"] = who
                 self._send(200, snap)
             elif path == "/api/history":
+                query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                minutes = float(query.get("min", ["10"])[0])
+                since = time.time() - minutes * 60
                 with ctrl.lock:
-                    self._send(200, list(ctrl.history))
+                    self._send(200, [p for p in ctrl.history if p[0] >= since])
+            elif path == "/api/history.csv":
+                self._csv()
             else:
                 self._send(404, {"error": "No encontrado"})
 

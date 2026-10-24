@@ -50,14 +50,14 @@ Hojas de datos en la raíz: `Datasheet.pdf` (actuador S4, cableado en la pág. 3
 | %MW11 / %MW12 | PLC | Feedback crudo (%IW0.0) / posición 0…10000 |
 | %MW13 | PLC | Bits: X0 watchdog, X1 error de posición, X2 falla feedback, X3 en posición, X4 FC cerrada (%I0.0), X5 FC abierta (%I0.1) |
 | %MW14 | PLC | Desviación consigna – posición |
-| %MW20 | PLC | Temperatura TP100 en décimas de °C (de %IW0.1), si ya se agregó el rung |
+| %MW20 / %MW21 | PLC | Temperatura TP100 en décimas de °C / crudo %IW0.1 (rungs 24–26 de `plc/README.md`; **aún no cargados en el PLC**). Crudo < 180 = sin señal → el panel muestra "Sin señal" |
 
 ## Configuración del PLC (Machine Expert Basic)
 - %QW1.0: tipo **4–20 mA**, mínimo **0**, máximo **10000**, fallback **0** (el rango "Normal" por defecto es 4000–20000; se editó a 0–10000).
 - %IW0.0 / %IW0.1: 0–10 V, Normal 0–1000.
 - Timers: %TM0 TON 100 ms ×20 (watchdog 2 s), %TM1 ×600 (60 s posición), %TM2 ×10 (1 s falla feedback).
 - Comportamiento: fallback values; modo de arranque debe ser **Start In Run** (el rung de arranque deja la válvula cerrada).
-- Programa: 25 rungs (ver `plc/README.md`). Rung 0 = arranque (`LD SB_FIRSTRUN` = %S13 → %MW0 := 0, %MW2 := 0). `/%M100` = "siempre verdadero".
+- Programa: rung de arranque + rungs 0–23 (válvula) cargados; rungs 24–26 (temperatura) documentados pero pendientes (ver `plc/README.md`). Rung 0 = arranque (`LD SB_FIRSTRUN` = %S13 → %MW0 := 0, %MW2 := 0). `/%M100` = "siempre verdadero".
 - El usuario prefiere ver el programa en **ladder** pero escribe los rungs en **IL** y convierte con "> LD". Reglas IL del TM221: **una sola `LD` por rung**; timers con `BLK %TMx … IN … OUT_BLK … LD Q … END_BLK`; operaciones con varias líneas `[..]` tras un `LD`.
 
 ## Problemas ya resueltos (para diagnosticar rápido)
@@ -76,7 +76,8 @@ Hojas de datos en la raíz: `Datasheet.pdf` (actuador S4, cableado en la pág. 3
 
 ## Archivos
 - `pc/valve_control.py`: cliente Modbus TCP propio (sin dependencias), modos `interactive` y `sweep`. Ej.: `python pc/valve_control.py --ip 192.168.1.22 interactive`.
-- `pc/valve_web.py`: panel web (stdlib, sin dependencias) que reutiliza `ModbusTcp`/`Valve` de `valve_control.py`; sirve `dashboard/valvula.html` y una API JSON (`/api/status`, `/api/history`, POST `/api/setpoint`, `/api/enable`, `/api/close`). Reconecta solo. Todo requiere login (cookie de sesión HttpOnly/SameSite=Strict, POST solo con JSON); rol `operador` escribe, `lector` solo ve; 5 fallos por IP → bloqueo 5 min; HTTPS con `--cert/--key`. Ej.: `python pc/valve_web.py --plc 192.168.1.22` → `http://<IP PC>:8080`. Páginas: `dashboard/valvula.html`, `dashboard/login.html`.
+- `pc/valve_web.py`: panel web (stdlib, sin dependencias) que reutiliza `ModbusTcp`/`Valve` de `valve_control.py`; sirve `dashboard/valvula.html` y una API JSON (`/api/status`, `/api/history?min=N` [t, orden, posición, temp] con buffer de 1 h, `/api/history.csv`, POST `/api/setpoint`, `/api/enable`, `/api/close`). Reconecta solo. Todo requiere login (cookie de sesión HttpOnly/SameSite=Strict, POST solo con JSON); rol `operador` escribe, `lector` solo ve; 5 fallos por IP → bloqueo 5 min; HTTPS con `--cert/--key`. Ej.: `python pc/valve_web.py --plc 192.168.1.22` → `http://<IP PC>:8080`. Páginas: `dashboard/valvula.html`, `dashboard/login.html`.
+- Pantallas de `dashboard/valvula.html` (rutas con #): `#/` Inicio (botón MB24) → `#/mb24` "Centro de visualización y control de datos" (botón Quemadores de gas) → `#/mb24/quemadores` (temperatura + válvula con ▲▼ de 5 %, Enviar, Visualizar tendencia, Descargar CSV, Tomar control/Liberar/Cerrar). Barra superior siempre con Inicio, PLC+IP, usuario. Las ▲▼ de temperatura están deshabilitadas hasta que exista el PID. Logo en `dashboard/imagenes/` servido en `/imagenes/...` (público). El panel toma el puerto en exclusiva: un segundo panel no arranca.
 - `pc/usuarios.py`: cuentas (PBKDF2-SHA256) en `pc/usuarios.json` (en `.gitignore`, igual que `*.pem`). `agregar <n> --rol operador|lector`, `contrasena`, `rol`, `quitar`, `lista`.
 - `plc/README.md`: configuración, mapa de memoria y los rungs (ladder + IL).
 - `README.md`: cableado, instalación, seguridad y uso (para electricistas).

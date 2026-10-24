@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Control de válvula de gas</title>
+<title>MayaControl</title>
 <style>
   :root {
     --ground: #E6E9ED;
     --card: #FFFFFF;
     --ink: #1D232B;
     --muted: #555F6B;
-    --line: #C9D0D8;
+    --line: #DDE2E7;
     --header: #1D232B;
     --header-ink: #F3F5F7;
     --header-chip: #2B333D;
     --valve: #1F5FBF;
     --pos: #8A96A3;
+    --temp: #C2410C;
+    --brand: #8CC63F;
     --alarm-bg: #FFF1E6;
     --alarm-ink: #7C2D12;
     --danger: #C2410C;
@@ -30,72 +32,105 @@
     color: var(--ink);
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   }
-  .wrap { max-width: 1360px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
   .mono { font-family: Consolas, "Cascadia Mono", monospace; }
+
+  /* ---- top bar (always visible) ---- */
   header {
-    background: var(--header); color: var(--header-ink); border-radius: 10px; padding: 14px 18px;
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+    background: var(--header); color: var(--header-ink); border-radius: 10px; padding: 10px 14px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
   }
-  header h1 { margin: 0; font-size: 22px; font-weight: 600; }
-  header .sub { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #B8C1CC; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { background: var(--header-chip); border-radius: 8px; padding: 8px 12px; font-size: 14px; display: flex; gap: 8px; align-items: center; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: #8A96A3; display: inline-block; flex: none; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand b { font-size: 17px; font-weight: 600; white-space: nowrap; }
+  .crumbs { font-size: 13px; color: #B8C1CC; }
+  .crumbs a { color: #DCE3EA; text-decoration: none; }
+  .crumbs a:hover { text-decoration: underline; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { background: var(--header-chip); border-radius: 8px; padding: 6px 10px; font-size: 12px; display: flex; gap: 8px; align-items: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #8A96A3; display: inline-block; flex: none; }
   .dot.on { background: #4CC38A; }
   .dot.bad { background: #F07B4A; }
   .dot.wait { background: #E2B33C; animation: blink 1.2s ease-in-out infinite; }
   @keyframes blink { 50% { opacity: .3; } }
   @media (prefers-reduced-motion: reduce) { .dot.wait { animation: none; } }
+  .hbtn {
+    font: inherit; font-size: 13px; font-weight: 600; min-height: 34px; padding: 4px 12px; border-radius: 8px;
+    background: transparent; color: var(--header-ink); border: 1px solid #5A6573; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .hbtn:hover { background: var(--header-chip); }
+
   .banner { border-radius: 10px; padding: 12px 16px; font-size: 15px; background: var(--alarm-bg); color: var(--alarm-ink); }
   .banner.info { background: #FFF8E1; color: #5C4300; }
-  .card { background: var(--card); border-radius: 12px; padding: 16px 18px; }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-  .kpi .label { font-size: 13px; color: var(--muted); }
-  .kpi .value { font-size: 34px; font-weight: 600; line-height: 1.2; }
-  .kpi .note { font-size: 13px; color: var(--muted); }
-  .main { display: flex; flex-wrap: wrap; gap: 16px; }
-  .chart-card { flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-  .side { flex: 1 1 340px; display: flex; flex-direction: column; gap: 16px; }
-  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .card { background: var(--card); border-radius: 12px; padding: 18px 20px; }
   h2 { margin: 0; font-size: 17px; font-weight: 600; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .hidden { display: none !important; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+
+  button {
+    font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; padding: 8px 16px;
+    border-radius: 8px; border: 1px solid #A9B3BE; background: #FFFFFF; color: var(--ink); cursor: pointer;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary { background: var(--valve); color: #FFFFFF; border-color: var(--valve); }
+  button.danger { background: var(--danger); color: #FFFFFF; border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
+  button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--valve); outline-offset: 2px; }
+
+  /* ---- navigation screens ---- */
+  .screen { min-height: 60vh; display: flex; align-items: center; justify-content: center; }
+  .screen .card { width: 100%; max-width: 760px; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 32px; text-align: center; }
+  .screen h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); font-weight: 600; line-height: 1.25; }
+  .big-btn {
+    min-width: min(100%, 360px); min-height: 110px; font-size: clamp(26px, 5vw, 40px); font-weight: 700; letter-spacing: .04em;
+    border: 2px solid var(--ink); border-radius: 14px; background: #FFFFFF; color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 16px 28px;
+  }
+  .big-btn small { font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .big-btn.wide { font-size: clamp(20px, 3.5vw, 28px); letter-spacing: 0; min-height: 84px; }
+  .big-btn:hover { background: #F4F6F8; }
+  .big-btn:active { transform: translateY(1px); }
+  .logo { width: 200px; max-width: 60%; height: auto; }
+
+  /* ---- burners screen ---- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .tile { display: flex; flex-direction: column; gap: 10px; }
+  .tile .label { font-size: 18px; font-weight: 600; }
+  .readout { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .readout .value { font-size: clamp(48px, 9vw, 72px); font-weight: 600; line-height: 1; }
+  .spin { display: flex; flex-direction: column; gap: 6px; }
+  .spin button { width: 64px; min-height: 52px; padding: 0; font-size: 22px; line-height: 1; }
+  .tile .note { font-size: 14px; color: var(--muted); }
+  .pending { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--line); font-size: 15px; }
+  .pending input { font: inherit; font-size: 18px; width: 90px; min-height: 44px; padding: 6px 10px; border: 1px solid #A9B3BE; border-radius: 8px; }
+  .pending.changed { color: var(--valve); font-weight: 600; }
+  .bar { position: relative; height: 14px; background: var(--ground); border-radius: 7px; overflow: hidden; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; background: #3A4654; border-radius: 7px; }
+  .bar .mark { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--valve); }
+  .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .actions button { min-height: 52px; }
+  .ctrlbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  .ctrlbar .danger { min-height: 52px; font-size: 16px; }
+  .msg { font-size: 14px; min-height: 20px; }
+  .msg.err { color: var(--alarm-ink); font-weight: 600; }
+  .msg.ok { color: var(--ok); }
   .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .sw { width: 18px; height: 3px; display: inline-block; border-radius: 2px; }
-  canvas { width: 100%; height: 380px; display: block; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  button {
-    font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 8px 14px;
-    border-radius: 8px; border: 1px solid #A9B3BE; background: #FFFFFF; color: var(--ink); cursor: pointer;
-  }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  button.logout { min-height: 32px; padding: 4px 10px; font-size: 13px; background: transparent; color: var(--header-ink); border-color: #5A6573; }
-  button.primary { background: var(--valve); color: #FFFFFF; border-color: var(--valve); }
-  button.danger { background: var(--danger); color: #FFFFFF; border-color: var(--danger); font-size: 17px; min-height: 56px; }
-  button[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
-  button:focus-visible, input:focus-visible { outline: 3px solid var(--valve); outline-offset: 2px; }
-  .presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .presets button { padding: 8px 4px; }
-  input[type=number], input[type=password] { font: inherit; font-size: 18px; width: 120px; min-height: 44px; padding: 6px 10px; border: 1px solid #A9B3BE; border-radius: 8px; }
-  input[type=range] { width: 100%; accent-color: var(--valve); height: 28px; }
-  label { font-size: 13px; font-weight: 600; }
-  .bar { position: relative; height: 16px; background: var(--ground); border-radius: 8px; overflow: hidden; }
-  .bar .fill { position: absolute; inset: 0 auto 0 0; background: #3A4654; border-radius: 8px; }
-  .bar .mark { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--valve); }
-  .lamps { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  canvas { width: 100%; height: 340px; display: block; }
+  .lamps { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
   .lamp { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 8px; background: var(--off-bg); font-size: 14px; }
   .lamp.ok { background: var(--ok-bg); }
   .lamp.ok .dot { background: var(--ok); }
   .lamp.bad { background: var(--alarm-bg); color: var(--alarm-ink); font-weight: 600; }
   .lamp.bad .dot { background: var(--danger); }
-  .alarm { display: flex; gap: 10px; align-items: center; background: var(--alarm-bg); color: var(--alarm-ink); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
-  .muted { color: var(--muted); font-size: 14px; }
-  .msg { font-size: 14px; min-height: 20px; }
-  .msg.err { color: var(--alarm-ink); font-weight: 600; }
-  .msg.ok { color: var(--ok); }
-  .log { list-style: none; margin: 0; padding: 0; font-size: 14px; max-height: 260px; overflow-y: auto; }
+  .log { list-style: none; margin: 0; padding: 0; font-size: 14px; max-height: 220px; overflow-y: auto; }
   .log li { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #E6E9ED; }
   .log li.alarm-line { color: var(--alarm-ink); font-weight: 600; }
-  .hidden { display: none !important; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 15px; }
+  details[open] summary { margin-bottom: 12px; }
   footer { font-size: 13px; color: var(--muted); }
 </style>
 </head>
@@ -103,103 +138,117 @@
 <div class="wrap">
 
   <header>
-    <div>
-      <div class="sub">Manipulación automática de gas · Máquina 1</div>
-      <h1>Válvula de gas V-101</h1>
+    <div class="brand">
+      <a class="hbtn" href="#/" aria-label="Volver al inicio">⌂ Inicio</a>
+      <div>
+        <b>MayaControl</b>
+        <div class="crumbs" id="crumbs"></div>
+      </div>
     </div>
     <div class="chips">
       <div class="chip"><span class="dot" id="connDot" aria-hidden="true"></span><span id="connText">Conectando…</span></div>
-      <div class="chip" id="ctrlChip">Control: --</div>
       <div class="chip mono" id="clock">--:--:--</div>
-      <form class="chip" method="post" action="/logout" style="padding: 4px 4px 4px 12px">
+      <form class="chip" method="post" action="/logout" style="padding: 3px 3px 3px 10px">
         <span id="userText">--</span>
-        <button type="submit" class="logout">Salir</button>
+        <button type="submit" class="hbtn" style="min-height: 28px">Salir</button>
       </form>
     </div>
   </header>
 
   <div class="banner hidden" id="banner" role="alert"></div>
 
-  <section class="kpis" aria-label="Valores actuales">
-    <div class="card kpi">
-      <div class="label">Consigna pedida (%MW0)</div>
-      <div class="value mono" id="kpiSp">-- %</div>
-      <div class="note mono" id="kpiSpMa">-- mA</div>
-    </div>
-    <div class="card kpi">
-      <div class="label">Salida al actuador (%QW1.0)</div>
-      <div class="value mono" id="kpiOut" style="color: var(--valve)">-- %</div>
-      <div class="note mono" id="kpiOutMa">-- mA</div>
-    </div>
-    <div class="card kpi">
-      <div class="label">Posición real de la válvula</div>
-      <div class="value mono" id="kpiPos">-- %</div>
-      <div class="bar" role="img" id="posBar" aria-label="Posición de la válvula">
-        <div class="fill" id="posFill" style="width: 0"></div>
-        <div class="mark" id="posMark" style="left: 0"></div>
-      </div>
-    </div>
-    <div class="card kpi">
-      <div class="label">Desviación (salida – posición)</div>
-      <div class="value mono" id="kpiDev">-- %</div>
-      <div class="note mono" id="kpiFb">feedback -- mA</div>
+  <!-- 1. Inicio: choose machine -->
+  <section class="screen" id="view-inicio" data-view>
+    <div class="card">
+      <img class="logo" src="/imagenes/Mayalatex_logo.png" alt="Maya Latex Productos" width="681" height="341">
+      <a class="big-btn" href="#/mb24" style="text-decoration: none">
+        MB24
+        <small><span class="dot" id="mbDot"></span><span id="mbText">--</span></small>
+      </a>
     </div>
   </section>
 
-  <div class="main">
-    <section class="card chart-card" aria-label="Tendencia">
+  <!-- 2. Machine: choose area -->
+  <section class="screen hidden" id="view-mb24" data-view>
+    <div class="card">
+      <h1>Centro de visualización<br>y control de datos</h1>
+      <a class="big-btn wide" href="#/mb24/quemadores" style="text-decoration: none">Quemadores de gas</a>
+    </div>
+  </section>
+
+  <!-- 3. Gas burners: temperature + valve -->
+  <section class="stack hidden" id="view-quemadores" data-view style="gap: 16px">
+    <div class="tiles">
+      <div class="card tile" aria-label="Temperatura">
+        <div class="label">Temperatura</div>
+        <div class="readout">
+          <div class="value mono" id="tempVal" style="color: var(--temp)">--</div>
+          <div class="spin">
+            <button type="button" disabled aria-label="Subir consigna de temperatura">▲</button>
+            <button type="button" disabled aria-label="Bajar consigna de temperatura">▼</button>
+          </div>
+        </div>
+        <div class="note" id="tempNote">Sin señal del TP100</div>
+        <div class="pending">Consigna: se activa cuando el PID esté programado en el PLC.</div>
+      </div>
+
+      <div class="card tile" aria-label="Válvula">
+        <div class="label">Válvula <span class="muted" style="font-weight: 400">– posición real</span></div>
+        <div class="readout">
+          <div class="value mono" id="posVal">--</div>
+          <div class="spin">
+            <button type="button" id="btnUp" aria-label="Abrir 5 % más">▲</button>
+            <button type="button" id="btnDown" aria-label="Cerrar 5 %">▼</button>
+          </div>
+        </div>
+        <div class="bar" role="img" id="posBar" aria-label="Posición de la válvula">
+          <div class="fill" id="posFill" style="width: 0"></div>
+          <div class="mark" id="posMark" style="left: 0"></div>
+        </div>
+        <div class="note mono" id="outNote">Orden al actuador: --</div>
+        <div class="pending" id="pendingRow">
+          <label for="spInput">Nueva orden</label>
+          <input type="number" id="spInput" min="0" max="100" step="1" value="0">
+          <span>%</span>
+          <span class="mono muted" id="spMa">4.00 mA</span>
+          <button type="button" class="primary" id="btnSend">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="btnTrend" aria-pressed="false" aria-controls="trendCard">Visualizar tendencia</button>
+      <button type="button" id="btnDownload">Descargar</button>
+    </div>
+
+    <section class="card stack hidden" id="trendCard" aria-label="Tendencia">
       <div class="row" style="justify-content: space-between">
         <h2>Tendencia – últimos 10 minutos</h2>
         <div class="legend">
-          <span><i class="sw" style="background: var(--valve)"></i>Salida al actuador</span>
+          <span><i class="sw" style="background: var(--temp)"></i>Temperatura (°C, eje der.)</span>
+          <span><i class="sw" style="background: var(--valve)"></i>Orden válvula</span>
           <span><i class="sw" style="background: var(--pos)"></i>Posición real</span>
         </div>
       </div>
-      <canvas id="chart" role="img" aria-label="Gráfica de la salida a la válvula y su posición real en el tiempo"></canvas>
+      <canvas id="chart" role="img" aria-label="Gráfica de temperatura, orden y posición de la válvula en el tiempo"></canvas>
     </section>
 
-    <div class="side">
-      <section class="card stack" aria-label="Control">
-        <h2>Control</h2>
-
-        <div class="muted hidden" id="readOnly">Tu usuario es de solo lectura: puedes ver la válvula pero no operarla.</div>
-
-        <div class="stack" id="ctrlBox">
+    <section class="card stack" id="ctrlCard" aria-label="Control">
+      <div class="ctrlbar">
         <div class="row">
           <button type="button" class="primary" id="btnEnable">Tomar control</button>
           <button type="button" id="btnDisable">Liberar (cerrar)</button>
+          <span class="muted" id="ctrlText">--</span>
         </div>
+        <button type="button" class="danger" id="btnClose">CERRAR VÁLVULA</button>
+      </div>
+      <div class="msg" id="msg" aria-live="polite"></div>
+    </section>
+    <div class="card muted hidden" id="readOnly">Tu usuario es de solo lectura: puedes ver los valores pero no operar la válvula.</div>
 
-        <div class="stack" style="gap: 6px">
-          <div class="row" style="justify-content: space-between">
-            <label for="spRange">Nueva apertura</label>
-            <div class="row" role="group" aria-label="Unidades">
-              <button type="button" id="unitPct" aria-pressed="true">%</button>
-              <button type="button" id="unitMa" aria-pressed="false">mA</button>
-            </div>
-          </div>
-          <input type="range" id="spRange" min="0" max="100" step="1" value="0" aria-label="Nueva apertura en por ciento">
-          <div class="presets" role="group" aria-label="Valores rápidos">
-            <button type="button" data-pct="0">0 %</button>
-            <button type="button" data-pct="25">25 %</button>
-            <button type="button" data-pct="50">50 %</button>
-            <button type="button" data-pct="75">75 %</button>
-            <button type="button" data-pct="100">100 %</button>
-          </div>
-          <div class="row">
-            <input type="number" id="spInput" min="0" max="100" step="0.5" value="0" aria-label="Valor">
-            <span class="mono" id="spOther">= 4.00 mA</span>
-            <button type="button" class="primary" id="btnSend">Enviar</button>
-          </div>
-          <div class="msg" id="msg" aria-live="polite"></div>
-        </div>
-
-        <button type="button" class="danger" id="btnClose">CERRAR VÁLVULA (4 mA)</button>
-        </div>
-      </section>
-
-      <section class="card stack" aria-label="Estado del PLC" style="gap: 8px">
-        <h2>Estado</h2>
+    <details class="card">
+      <summary>Estado del PLC y eventos</summary>
+      <div class="stack">
         <div class="lamps">
           <div class="lamp" id="lHb"><span class="dot"></span>Heartbeat</div>
           <div class="lamp" id="lInPos"><span class="dot"></span>En posición</div>
@@ -209,32 +258,54 @@
           <div class="lamp" id="lPosErr"><span class="dot"></span>Error posición</div>
           <div class="lamp" id="lFbErr"><span class="dot"></span>Falla feedback</div>
         </div>
-      </section>
-    </div>
-  </div>
+        <ul class="log" id="log"><li class="muted">Sin eventos.</li></ul>
+      </div>
+    </details>
 
-  <section class="card stack" aria-label="Eventos" style="gap: 8px">
-    <h2>Eventos</h2>
-    <ul class="log" id="log"><li class="muted">Sin eventos.</li></ul>
+    <footer>La seguridad está en el PLC: si este programa o la red fallan, el watchdog cierra la válvula en 2 s. Esta válvula no sustituye a las válvulas de corte del quemador.</footer>
   </section>
-
-  <footer>La seguridad está en el PLC: si este programa o la red fallan, el watchdog cierra la válvula en 2 s. Esta válvula no sustituye a las válvulas de corte del quemador.</footer>
 </div>
 
 <script>
 (function () {
   const HISTORY_S = 600;
   const POLL_MS = 1000;
+  const STEP = 5;               // % per arrow press
+  const TEMP_MAX = 150;         // TP100 transmitter range 0..150 °C
   const $ = (id) => document.getElementById(id);
   const fmt = (v, d) => Number(v).toFixed(d);
   const pctToMa = (p) => 4 + p * 0.16;
-  const maToPct = (ma) => (ma - 4) / 0.16;
 
   let last = null;          // last /api/status response
-  let hist = [];            // [t, out_pct, pos_pct]
-  let unit = 'pct';
-  let pending = 0;          // value (in %) the operator is about to send
+  let hist = [];            // [t, out_pct, pos_pct, temp_c]
+  let pending = null;       // order (%) being edited; null = follow the PLC
+  let trendOpen = false;
 
+  // ---- screens ----
+  const ROUTES = {
+    '#/': { view: 'view-inicio', crumbs: [] },
+    '#/mb24': { view: 'view-mb24', crumbs: [['#/mb24', 'MB24']] },
+    '#/mb24/quemadores': { view: 'view-quemadores', crumbs: [['#/mb24', 'MB24'], ['#/mb24/quemadores', 'Quemadores de gas']] }
+  };
+
+  function route() {
+    const r = ROUTES[location.hash] || ROUTES['#/'];
+    document.querySelectorAll('[data-view]').forEach((v) => v.classList.toggle('hidden', v.id !== r.view));
+    const c = $('crumbs');
+    c.replaceChildren();
+    r.crumbs.forEach(([href, text], i) => {
+      if (i) c.append(' › ');
+      const a = document.createElement('a');
+      a.href = href; a.textContent = text;
+      c.append(a);
+    });
+    if (!r.crumbs.length) c.textContent = 'Inicio';
+    window.scrollTo(0, 0);
+    drawChart();
+  }
+  window.addEventListener('hashchange', route);
+
+  // ---- writes ----
   function say(text, kind) {
     $('msg').textContent = text;
     $('msg').className = 'msg ' + (kind || '');
@@ -258,56 +329,59 @@
     }
   }
 
-  // ---- pending value: slider, presets, number box ----
-  function setPending(pct, from) {
-    pending = Math.max(0, Math.min(100, Math.round(pct * 2) / 2));
-    if (from !== 'range') $('spRange').value = pending;
-    if (from !== 'input') $('spInput').value = unit === 'pct' ? fmt(pending, 1) : fmt(pctToMa(pending), 2);
-    $('spOther').textContent = unit === 'pct' ? '= ' + fmt(pctToMa(pending), 2) + ' mA' : '= ' + fmt(pending, 1) + ' %';
+  function currentOrder() {
+    return last && last.state ? last.state.setpoint_pct : 0;
   }
 
-  function setUnit(u) {
-    unit = u;
-    $('unitPct').setAttribute('aria-pressed', String(u === 'pct'));
-    $('unitMa').setAttribute('aria-pressed', String(u === 'ma'));
-    const box = $('spInput');
-    if (u === 'pct') { box.min = 0; box.max = 100; box.step = 0.5; }
-    else { box.min = 4; box.max = 20; box.step = 0.1; }
-    setPending(pending);
+  function setPending(pct) {
+    pending = Math.max(0, Math.min(100, Math.round(pct)));
+    $('spInput').value = pending;
+    renderPending();
   }
 
-  $('unitPct').addEventListener('click', () => setUnit('pct'));
-  $('unitMa').addEventListener('click', () => setUnit('ma'));
-  $('spRange').addEventListener('input', (e) => setPending(Number(e.target.value), 'range'));
+  function renderPending() {
+    const v = pending === null ? currentOrder() : pending;
+    if (document.activeElement !== $('spInput')) $('spInput').value = fmt(v, 0);
+    $('spMa').textContent = fmt(pctToMa(v), 2) + ' mA';
+    $('pendingRow').classList.toggle('changed', pending !== null && Math.abs(pending - currentOrder()) >= 0.5);
+  }
+
+  $('btnUp').addEventListener('click', () => setPending((pending === null ? currentOrder() : pending) + STEP));
+  $('btnDown').addEventListener('click', () => setPending((pending === null ? currentOrder() : pending) - STEP));
   $('spInput').addEventListener('input', (e) => {
     const v = Number(e.target.value);
-    if (e.target.value === '' || isNaN(v)) return;
-    setPending(unit === 'pct' ? v : maToPct(v), 'input');
+    if (e.target.value !== '' && !isNaN(v)) { pending = Math.max(0, Math.min(100, v)); renderPending(); }
   });
   $('spInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
-  document.querySelectorAll('[data-pct]').forEach((b) =>
-    b.addEventListener('click', () => setPending(Number(b.dataset.pct))));
 
   async function send() {
     const v = Number($('spInput').value);
-    const ok = unit === 'pct' ? v >= 0 && v <= 100 : v >= 4 && v <= 20;
-    if (!ok) { say(unit === 'pct' ? 'El valor debe estar entre 0 y 100 %.' : 'El valor debe estar entre 4 y 20 mA.', 'err'); return; }
-    const body = unit === 'pct' ? { pct: v } : { ma: v };
-    if (await post('/api/setpoint', body)) {
-      say('Enviado: ' + fmt(pending, 1) + ' % (' + fmt(pctToMa(pending), 2) + ' mA).', 'ok');
+    if (!(v >= 0 && v <= 100)) { say('El valor debe estar entre 0 y 100 %.', 'err'); return; }
+    if (await post('/api/setpoint', { pct: v })) {
+      pending = null;
+      say('Orden enviada: ' + fmt(v, 0) + ' % (' + fmt(pctToMa(v), 2) + ' mA).', 'ok');
     }
   }
 
   $('btnSend').addEventListener('click', send);
   $('btnClose').addEventListener('click', async () => {
-    if (await post('/api/close')) { setPending(0); say('Orden de cierre enviada.', 'ok'); }
+    if (await post('/api/close')) { pending = null; say('Orden de cierre enviada.', 'ok'); }
   });
   $('btnEnable').addEventListener('click', async () => {
-    if (await post('/api/enable', { on: true })) { setPending(0); say('Control tomado. La válvula arranca cerrada.', 'ok'); }
+    if (await post('/api/enable', { on: true })) { pending = null; say('Control tomado. La válvula arranca cerrada.', 'ok'); }
   });
   $('btnDisable').addEventListener('click', async () => {
-    if (await post('/api/enable', { on: false })) { setPending(0); say('Control liberado. La válvula se cierra.', 'ok'); }
+    if (await post('/api/enable', { on: false })) { pending = null; say('Control liberado. La válvula se cierra.', 'ok'); }
   });
+
+  $('btnTrend').addEventListener('click', () => {
+    trendOpen = !trendOpen;
+    $('btnTrend').setAttribute('aria-pressed', String(trendOpen));
+    $('btnTrend').textContent = trendOpen ? 'Ocultar tendencia' : 'Visualizar tendencia';
+    $('trendCard').classList.toggle('hidden', !trendOpen);
+    if (trendOpen) { drawChart(); $('trendCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  });
+  $('btnDownload').addEventListener('click', () => { location.href = '/api/history.csv'; });
 
   // ---- status ----
   function lamp(id, on, kind) {
@@ -319,56 +393,69 @@
     if (!last) return;
     const s = last.state;
     const conn = last.connected;
-
     const waiting = !conn && !last.ever_connected && last.plc !== '--';
-    $('connDot').className = 'dot ' + (conn ? 'on' : waiting ? 'wait' : 'bad');
-    $('connText').textContent = 'PLC ' + last.plc + ' · ' +
-      (conn ? 'conectado' : waiting ? 'esperando conexión…' : 'SIN COMUNICACIÓN');
+
+    const dotClass = 'dot ' + (conn ? 'on' : waiting ? 'wait' : 'bad');
+    const connWord = conn ? 'conectado' : waiting ? 'esperando conexión…' : 'SIN COMUNICACIÓN';
+    $('connDot').className = dotClass;
+    $('connText').textContent = 'PLC ' + last.plc + ' · ' + connWord;
+    $('mbDot').className = dotClass;
+    $('mbText').textContent = 'PLC ' + connWord;
+
     if (last.user) {
       const operator = last.role === 'operador';
       $('userText').textContent = last.user + ' · ' + last.role;
-      $('ctrlBox').classList.toggle('hidden', !operator);
+      $('ctrlCard').classList.toggle('hidden', !operator);
       $('readOnly').classList.toggle('hidden', operator);
+      $('pendingRow').classList.toggle('hidden', !operator);
+      ['btnUp', 'btnDown'].forEach((id) => $(id).classList.toggle('hidden', !operator));
     }
 
     const banner = [];
     const tries = last.attempts ? ' Intentos: ' + last.attempts + (last.error ? ' (' + last.error + ').' : '.') : '';
     if (waiting) {
       banner.push('El panel está funcionando, pero todavía no hay conexión con el PLC ' + last.plc +
-        '. Sigue intentando solo cada medio segundo. Revisa que el PLC tenga 24 V, esté en RUN y el cable esté en ETH1.' + tries);
+        '. Sigue intentando solo. Revisa que el PLC tenga 24 V, esté en RUN y el cable esté en ETH1.' + tries);
     } else if (!conn) {
       banner.push('Se perdió la comunicación con el PLC ' + last.plc + '. El watchdog del PLC cierra la válvula en 2 s. Reintentando…' + tries);
     }
     if (s && s.alarms.length) banner.push('Alarma: ' + s.alarms.join(', ') + '.');
-    if (s && conn && !s.enabled) banner.push('La PC no tiene el control: la válvula está cerrada. Presiona "Tomar control" para operarla.');
+    if (s && conn && !s.enabled && location.hash === '#/mb24/quemadores' && last.role === 'operador') {
+      banner.push('La PC no tiene el control: la válvula está cerrada. Presiona "Tomar control" para operarla.');
+    }
     $('banner').textContent = banner.join(' ');
     $('banner').classList.toggle('hidden', banner.length === 0);
-    $('banner').classList.toggle('info', waiting);
+    $('banner').classList.toggle('info', waiting && banner.length === 1);
 
-    $('ctrlChip').textContent = !s ? 'Control: --' : (s.enabled ? 'Control: PC (habilitado)' : 'Control: PLC (cerrada)');
-
-    const canWrite = conn && s && s.enabled;
-    ['btnSend', 'spRange', 'spInput'].forEach((id) => { $(id).disabled = !canWrite; });
-    document.querySelectorAll('[data-pct]').forEach((b) => { b.disabled = !canWrite; });
-    $('btnEnable').disabled = !conn || (s && s.enabled);
+    const canWrite = !!(conn && s && s.enabled);
+    ['btnUp', 'btnDown', 'btnSend', 'spInput'].forEach((id) => { $(id).disabled = !canWrite; });
+    $('btnEnable').disabled = !conn || !!(s && s.enabled);
     $('btnDisable').disabled = !canWrite;
     $('btnClose').disabled = !conn;
+    $('ctrlText').textContent = !s ? '' : s.enabled ? 'La PC tiene el control' : 'Control en el PLC (válvula cerrada)';
 
     if (!s) {
-      ['kpiSp', 'kpiOut', 'kpiPos', 'kpiDev'].forEach((id) => { $(id).textContent = '-- %'; });
+      $('tempVal').textContent = '--';
+      $('tempNote').textContent = 'Sin datos del PLC';
+      $('posVal').textContent = '--';
+      $('outNote').textContent = 'Orden al actuador: --';
       return;
     }
-    $('kpiSp').textContent = fmt(s.setpoint_pct, 1) + ' %';
-    $('kpiSpMa').textContent = fmt(s.setpoint_ma, 2) + ' mA';
-    $('kpiOut').textContent = fmt(s.output_pct, 1) + ' %';
-    $('kpiOutMa').textContent = fmt(s.output_ma, 2) + ' mA';
-    $('kpiPos').textContent = fmt(s.feedback_pct, 1) + ' %';
-    $('kpiDev').textContent = (s.deviation_pct >= 0 ? '+' : '') + fmt(s.deviation_pct, 1) + ' %';
-    $('kpiFb').textContent = 'feedback ' + fmt(s.feedback_ma, 2) + ' mA (crudo ' + s.feedback_raw + ')';
+    if (s.temperature_c === null) {
+      $('tempVal').textContent = '--';
+      $('tempNote').textContent = 'Sin señal del TP100 (crudo ' + s.temperature_raw + ')';
+    } else {
+      $('tempVal').textContent = fmt(s.temperature_c, 1) + '°';
+      $('tempNote').textContent = 'Grados Celsius · señal ' + fmt(s.temperature_raw / 50, 2) + ' mA';
+    }
+    $('posVal').textContent = fmt(s.feedback_pct, 0) + ' %';
+    $('outNote').textContent = 'Orden al actuador: ' + fmt(s.output_pct, 1) + ' % (' + fmt(s.output_ma, 2) + ' mA)' +
+      (s.in_position ? ' · en posición' : ' · moviendo…');
     const pos = Math.max(0, Math.min(100, s.feedback_pct)), out = Math.max(0, Math.min(100, s.output_pct));
     $('posFill').style.width = pos + '%';
     $('posMark').style.left = 'calc(' + out + '% - 1.5px)';
-    $('posBar').setAttribute('aria-label', 'Posición ' + fmt(pos, 0) + ' %, salida ' + fmt(out, 0) + ' %');
+    $('posBar').setAttribute('aria-label', 'Posición ' + fmt(pos, 0) + ' %, orden ' + fmt(out, 0) + ' %');
+    renderPending();
 
     lamp('lHb', s.heartbeat_ok);
     lamp('lInPos', s.in_position);
@@ -384,7 +471,7 @@
     if (!items.length) { $('log').innerHTML = '<li class="muted">Sin eventos.</li>'; return; }
     $('log').replaceChildren(...items.map((it) => {
       const li = document.createElement('li');
-      if (/ALARMA|Sin comunicación/.test(it.text)) li.className = 'alarm-line';
+      if (/ALARMA|comunicación|No responde/.test(it.text)) li.className = 'alarm-line';
       const t = document.createElement('span');
       t.className = 'mono';
       t.textContent = new Date(it.t * 1000).toLocaleTimeString('es-MX', { hour12: false });
@@ -397,6 +484,7 @@
 
   function drawChart() {
     const c = $('chart');
+    if (!trendOpen || !c.clientWidth) return;
     const dpr = window.devicePixelRatio || 1;
     const w = c.clientWidth, h = c.clientHeight;
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
@@ -406,11 +494,12 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
 
-    const L = 48, R = 16, T = 10, B = 28;
+    const L = 44, R = 44, T = 10, B = 28;
     const pw = w - L - R, ph = h - T - B;
     const now = last ? last.time : Date.now() / 1000;
     const xAt = (t) => L + pw * (1 - (now - t) / HISTORY_S);
     const yP = (v) => T + ph * (1 - Math.max(-2, Math.min(102, v)) / 100);
+    const yT = (v) => T + ph * (1 - Math.max(0, Math.min(TEMP_MAX, v)) / TEMP_MAX);
 
     g.font = '12px Consolas, monospace';
     g.lineWidth = 1;
@@ -420,25 +509,27 @@
       g.beginPath(); g.moveTo(L, y); g.lineTo(L + pw, y); g.stroke();
       g.fillStyle = '#555F6B';
       g.textAlign = 'right'; g.fillText(v + '%', L - 6, y + 4);
+      g.textAlign = 'left'; g.fillText(Math.round(v * TEMP_MAX / 100) + '°', L + pw + 6, y + 4);
     }
     g.textAlign = 'center';
     for (let m = 0; m <= 10; m += 2) {
       g.fillText(m === 10 ? 'ahora' : '-' + (10 - m) + ' min', L + pw * m / 10, h - 8);
     }
 
-    function line(idx, color, width) {
+    function line(idx, y, color, width) {
       g.strokeStyle = color; g.lineWidth = width;
       g.beginPath();
       let started = false;
       hist.forEach((p) => {
-        if (p[idx] === null || now - p[0] > HISTORY_S) { started = false; return; }
-        const X = xAt(p[0]), Y = yP(p[idx]);
+        if (p[idx] === null || p[idx] === undefined || now - p[0] > HISTORY_S) { started = false; return; }
+        const X = xAt(p[0]), Y = y(p[idx]);
         if (!started) { g.moveTo(X, Y); started = true; } else g.lineTo(X, Y);
       });
       g.stroke();
     }
-    line(2, '#8A96A3', 2.5);
-    line(1, '#1F5FBF', 2);
+    line(2, yP, '#8A96A3', 2.5);
+    line(1, yP, '#1F5FBF', 2);
+    line(3, yT, '#C2410C', 2.5);
   }
 
   async function poll() {
@@ -447,27 +538,26 @@
       if (r.status === 401) { location.href = '/login'; return; }
       last = await r.json();
     } catch (e) {
-      last = { connected: false, plc: '--', error: 'el servidor web no responde', state: null, log: last ? last.log : [], time: Date.now() / 1000,
-               user: last && last.user, role: last && last.role };
+      last = { connected: false, ever_connected: true, plc: '--', error: 'el servidor web no responde', state: null,
+               log: last ? last.log : [], time: Date.now() / 1000, user: last && last.user, role: last && last.role };
     }
     const s = last.state;
-    hist.push([last.time, s ? s.output_pct : null, s ? s.feedback_pct : null]);
+    hist.push([last.time, s ? s.output_pct : null, s ? s.feedback_pct : null, s ? s.temperature_c : null]);
     while (hist.length && last.time - hist[0][0] > HISTORY_S) hist.shift();
     render(); renderLog(); drawChart();
   }
 
   async function loadHistory() {
     try {
-      const r = await fetch('/api/history', { cache: 'no-store' });
-      hist = await r.json();
+      const r = await fetch('/api/history?min=10', { cache: 'no-store' });
+      if (r.ok) hist = await r.json();
     } catch (e) { hist = []; }
   }
 
   window.addEventListener('resize', drawChart);
-  setUnit('pct');
+  route();
   loadHistory().then(poll);
   setInterval(poll, POLL_MS);
-  setInterval(render, 1000);
 })();
 </script>
 </body>

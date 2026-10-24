@@ -73,6 +73,8 @@ En *Configuración → Comportamiento / Fallback* elegir **valores de repliegue*
 | %MW12 | PLC | Posición real 0 … 10000 (0.00 … 100.00 %) |
 | %MW13 | PLC | Palabra de estado (ver bits abajo) |
 | %MW14 | PLC | Desviación = consigna − posición real (con signo) |
+| %MW20 | PLC | Temperatura del TP100 en décimas de °C (0 … 1500 = 0.0 … 150.0 °C) |
+| %MW21 | PLC | Temperatura cruda (%IW0.1, 0 … 1000). Menos de 180 = sin señal del transmisor |
 
 | Bit de %MW13 | Significado |
 |---|---|
@@ -186,8 +188,23 @@ Rung 22 |--| %I0.0 |-------------------------------------( %MW13:X4 )--|
 Rung 23 |--| %I0.1 |-------------------------------------( %MW13:X5 )--|
 ```
 
+### F. Temperatura del TP100 (para el panel web)
+El transmisor es de 0–150 °C, 4–20 mA, y entra por **AI1** con su resistencia de **499 Ω** entre AI1+ y AI1–
+(4 mA = 200, 20 mA = 1000). Como es pasivo, el lazo es: +24V → borne 1 del transmisor → borne 2 → AI1+ → 499 Ω → AI1– → 0V.
+```
+Rung 24 – temperatura cruda
+|--|/ %M100 |--------------------------------[ %MW21 := %IW0.1 ]--|
+
+Rung 25 – escalar a décimas de °C: (crudo - 200) * 15 / 8  -> 0..1500
+|--|/ %M100 |-------------------[ %MW20 := (%MW21 - 200) * 15 / 8 ]-|
+
+Rung 26 – límite bajo
+|--[ %MW20 < 0 ]-----------------------------[ %MW20 := 0 ]-------|
+```
+Mientras estos rungs no estén cargados, %MW21 vale 0 y el panel muestra **"Sin señal del TP100"** en lugar de una temperatura falsa.
+
 Notas:
-- En el rung 10, el valor máximo es 800 × 25 = 20000, que cabe en un INT.
+- En el rung 10, el valor máximo es 800 × 25 = 20000, que cabe en un INT. En el rung 25, 800 × 15 = 12000.
 - La tolerancia de ±2 % (200) y los 60 s de %TM1 son ajustables. Primero hay que medir con el programa de Python cuánto tarda y qué tan exacta llega la válvula real, y después ajustarlos.
 - La falla de feedback **no cierra la válvula**: el posicionador sigue funcionando por su cuenta. Solo da alarma.
 
@@ -250,6 +267,9 @@ Rungs con OR (3 y 14):
 | 21 | `LD %M5` · `ST %MW13:X3` |
 | 22 | `LD %I0.0` · `ST %MW13:X4` |
 | 23 | `LD %I0.1` · `ST %MW13:X5` |
+| 24 | `LDN %M100` · `[%MW21 := %IW0.1]` |
+| 25 | `LDN %M100` · `[%MW20 := %MW21 - 200]` · `[%MW20 := %MW20 * 15]` · `[%MW20 := %MW20 / 8]` |
+| 26 | `LD [%MW20 < 0]` · `[%MW20 := 0]` |
 
 (`·` = nueva línea)
 
